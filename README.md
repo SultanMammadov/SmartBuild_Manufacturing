@@ -58,6 +58,7 @@ The Confusion Matrix below shows slightly lower performance than Confusion Matri
 **Figure_5.** "Confusion Matrix"
 
 The ROC (Receiver Operating Characteristic) graph below illustrates the relationship between the True Positive Rate (TPR) and the False Positive Rate (FPR).
+
 ![image](https://github.com/user-attachments/assets/a588b78d-abbe-4bc0-839c-98fa8472b38a)
 
 **Figure_6.** "ROC (Receiver Operating Characteristic)"
