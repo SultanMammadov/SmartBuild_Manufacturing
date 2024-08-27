@@ -10,6 +10,7 @@ By leveraging machine learning models on historical data, these errors can be pr
 **Data Collection:** The dataset is synthetic.
 
 **1st Model:** Polynomial Model:
+
 The dataset was split into 80% for training and 20% for testing.
 The below correlation matrix displays the relationships between various variables in a dataset. It shows correlation coefficients that measure the strength and direction of these relationships. There is a very high relationship between width and weight_in_kg (0.97), indicating that weight_in_kg increase as the width increase. The relationships between other variables are very weak.
 
