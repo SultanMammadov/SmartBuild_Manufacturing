@@ -42,9 +42,25 @@ R Square of of Polynomial: 0.97365
 **2nd Model:** XGBoost Classifier:
 
 ![image](https://github.com/user-attachments/assets/225b3648-66fa-432d-8d97-926eb5a0b7d5)
-
-
 **Figure_4.** "Decision Tree"
+
+The Confusion Matrix below shows slightly lower performance than Confusion Matrix of 1st model with the following values: True Negatives (TN): 1783, False Positives (FP): 186, False Negatives (FN): 48, and True Positives (TP): 951.
+
+![image](https://github.com/user-attachments/assets/a889ace5-0817-4213-8563-07fb94d4e14c)
+**Figure_5.** "Confusion Matrix"
+
+The ROC (Receiver Operating Characteristic) graph below illustrates the relationship between the True Positive Rate (TPR) and the False Positive Rate (FPR).
+![image](https://github.com/user-attachments/assets/a588b78d-abbe-4bc0-839c-98fa8472b38a)
+**Figure_5.** "Confusion Matrix"
+
+The following performance results were achieved using the XGBoost Classifier model, demonstrating the model's high reliability and effectiveness.
+Accuracy: 0.921
+Balanced Accuracy: 0.905
+F1 Score is 0.94
+
+
+
+
 
 
 
