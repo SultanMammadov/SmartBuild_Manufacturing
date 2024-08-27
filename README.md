@@ -9,6 +9,15 @@ By leveraging machine learning models on historical data, these errors can be pr
 
 **Data Collection:** The dataset is synthetic.
 
-**1st Model:** XGBRegressor:
+**1st Model:** Polynomial Model:
 
+The below correlation matrix displays the relationships between various variables in a dataset. It shows correlation coefficients that measure the strength and direction of these relationships. There is a very high relationship between width and weight_in_kg (0.97), indicating that weight_in_kg increase as the width increase. The relationships between other variables are very weak.
+
+![image](https://github.com/user-attachments/assets/4e8b45ac-674a-4088-b8fd-6b826826d148)
+
+**Figure_1.** "Correlation Matrix of all variables"
+
+
+
+![image](https://github.com/user-attachments/assets/9ef67098-99e4-48aa-ade7-3d2600e25c07)
 
