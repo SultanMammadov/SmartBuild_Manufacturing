@@ -1,5 +1,5 @@
 **Introduction:**
-
+        
 Smart Build is a manufacturing company that faces issues with product defects and difficulty of predicting weight of future products. Errors in products can be influenced by factors such as weight, ionization class, width, and various other characteristics.
 The uncertainty of products’ weight cause damages on the Quality Control, Planning in Transport, Storage and Warehousing, Packaging processes.
 
