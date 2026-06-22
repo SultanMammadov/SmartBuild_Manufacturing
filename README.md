@@ -74,9 +74,9 @@ The model is predicting Error in future products by using main factors as input.
 
 ![image](https://github.com/user-attachments/assets/225b3648-66fa-432d-8d97-926eb5a0b7d5)
 
-**Figure_5.** "Decision Tree"
+**Figure_5.** "XGBoost Feature Importance"
 
-The Confusion Matrix below shows slightly lower performance than Confusion Matrix of 1st model with the following values: True Negatives (TN): 1783, False Positives (FP): 186, False Negatives (FN): 48, and True Positives (TP): 951.
+The Confusion Matrix below shows True Negatives (TN): 1783, False Positives (FP): 186, False Negatives (FN): 48, and True Positives (TP): 951.
 
 ![image](https://github.com/user-attachments/assets/a889ace5-0817-4213-8563-07fb94d4e14c)
 
