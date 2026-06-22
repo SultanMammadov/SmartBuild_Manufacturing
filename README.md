@@ -5,26 +5,45 @@ The uncertainty of products’ weight cause damages on the Quality Control, Plan
 
 By leveraging machine learning models on historical data, these errors can be predicted in advance, allowing the company to proactively address potential defects and improve product quality.
 
-**Objective:** The goal of this project is to address the following business issues: -What will be weight of the future products ? -How can we predict errors in advance ? 
+**Objective:** The goal of this project is to address the following business issues: 
+ 
+ - What will be weight of the future products ?
+ - How can we predict errors in advance ? 
 
 **Data Collection:** The dataset is synthetic.
+
+
+**Data Cleaning:**
+
+The dataset was first checked for missing values, and two uninformative columns were removed — id, which carried no analytical value, and weight_in_g, which was confirmed to be a duplicate of weight_in_kg through a correlation check. Feature distributions were then visualised using histograms, which revealed unusual values in the width, weight_in_kg, and nicesness columns. Outliers in these columns were removed using the Z-score method, with a threshold of 3, ensuring that only extreme values were eliminated. Finally, all numeric columns were normalised using MinMax scaling to bring all features onto a consistent scale, preparing the data for reliable model training.
+
+Most features look reasonably well-distributed, with karma, reflectionscore, and modulation showing a clean, bell-shaped pattern. However, weight_in_kg stands out with a strong right skew, where most values cluster near zero but stretch out to 3, hinting at some extreme values that need attention. Quality and distortion show fragmented, uneven distributions with noticeable gaps, which could reflect discrete groupings or inconsistencies in how the data was recorded. Overall, while most features are in good shape, width, height, nicesness, and weight_in_kg show irregular tails that are worth addressing before moving into modelling.
+
+<img width="1161" height="913" alt="download" src="https://github.com/user-attachments/assets/ba288bbb-2e87-41a5-9ea2-65c2e6ca4177" />
+
+**Figure_1.** "Feature Distribution"
+
+**Feature Engineering:**
+
+Feature engineering began by converting boolean columns — error and multideminsionality — from yes/no text values to binary 1/0 format, making them numerically interpretable. Label Encoding was then applied to the categorical columns ionizationclass and fluxcompensation, replacing text categories with corresponding numerical values. The dataset was subsequently split into input and output features, separating raw material properties from production outcomes to provide a clearer structure for modelling. Finally, a correlation matrix was computed on the input features, revealing strong relationships between weight_in_kg, width, and height, which informed feature selection for the models ahead.
+
 
 **1st Model:** Polynomial Model:
 
 The dataset was split into 80% for training and 20% for testing.
 The below correlation matrix displays the relationships between various variables in a dataset. It shows correlation coefficients that measure the strength and direction of these relationships. There is a very high relationship between width and weight_in_kg (0.97), indicating that weight_in_kg increase as the width increase. The relationships between other variables are very weak.
 
-![image](https://github.com/user-attachments/assets/4e8b45ac-674a-4088-b8fd-6b826826d148)
+<img width="645" height="543" alt="download" src="https://github.com/user-attachments/assets/bebc564e-117d-4a9f-a5b1-3dedb01f2eaf" />
 
-**Figure_1.** "Correlation Matrix of all variables"
+**Figure_2.** "Correlation Matrix of all variables"
 
 ![image](https://github.com/user-attachments/assets/9ef67098-99e4-48aa-ade7-3d2600e25c07)
 
-**Figure_2.** "Linear Model vs Polynomial Model"
+**Figure_3.** "Linear Model vs Polynomial Model"
 
 ![image](https://github.com/user-attachments/assets/1abcb9d0-5dff-4ba0-b1cb-cf9a9e8e99e4)
 
-**Figure_3.** "Residual Distribution of Linear and Polynomial Models"
+**Figure_4.** "Residual Distribution of Linear and Polynomial Models"
 
 The residuals appear to be randomly scattered around 0 without any systematic pattern. This indicates that the model is well-suited for the data, and there is no obvious sign of non-linearity that the model is not capturing.
 
