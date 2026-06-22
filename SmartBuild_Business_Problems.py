@@ -1,417 +1,303 @@
-#!/usr/bin/env python
-# coding: utf-8
+# SmartBuild Manufacturing - Data Analysis Pipeline
 
-# # Import Dataset
-
-# In[250]:
-
-
-pip install feature_engine
-
-
-# In[251]:
-
+# IMPORT Libraries, Packages
 
 # Data Manipulation
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
+from scipy.stats import zscore
 
-# Visualization
+# Visualisation
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Machine Learning
+# Preprocessing
+from sklearn.preprocessing import LabelEncoder, minmax_scale, PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+
+# Model Selection & Evaluation
 from sklearn.model_selection import train_test_split
-from sklearn import datasets
+from sklearn.metrics import (
+    mean_squared_error, mean_absolute_error, r2_score,
+    accuracy_score, balanced_accuracy_score, f1_score,
+    confusion_matrix, roc_curve, roc_auc_score)
+
+# Models
 import xgboost as xgb
-from xgboost import XGBRegressor, plot_tree, XGBClassifier
-from sklearn.tree import DecisionTreeClassifier, plot_tree  # Added plot_tree
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import roc_curve, roc_auc_score, f1_score, accuracy_score, classification_report, confusion_matrix, balanced_accuracy_score, mean_squared_error, mean_absolute_error, r2_score
+from xgboost import XGBClassifier, XGBRegressor, plot_importance
 
 # Feature Selection
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 
-# Feature Engineering
-#from feature_engine.encoding import RareLabelEncoder, OrdinalEncoder
-from sklearn.preprocessing import LabelEncoder
+import os
 
-# Miscellaneous
-from sklearn.preprocessing import minmax_scale
-from scipy.stats import zscore
+# DATA IMPORT
 
-# Data Import
-data = pd.read_csv("SmartBuild_Manufacturing.csv")
+path = input("Enter input file path:")
+file = "SmartBuild_Manufacturing.csv"
+path_file = os.path.join(path, file)
+data = pd.read_csv(path_file)
 
-
-# In[252]:
+print(data.head(2))
+print(data.dtypes)
 
 
-data.head(2)
+**DATA CLEANING**
 
+# Check for missing values 
 
-# In[253]:
+print(data.isnull().sum())
 
+# Drop duplicate and uninformative columns 
+# 'weight_in_g' is a duplicate of 'weight_in_kg' 
 
-data.dtypes
+print("Correlation between weight columns:", data['weight_in_kg'].corr(data['weight_in_g']).round(2))
+data = data.drop(columns = ['id', 'weight_in_g'])
 
-
-# # Cleaning
-
-# In[254]:
-
-
-# Check if there are any NULL values
-data.isnull().sum()
-
-
-# In[255]:
-
-
-# Use correlation to check if weight columns are duplicates of each other
-print(data['weight_in_kg'].corr(data['weight_in_g']).round(2))
-
-
-# In[256]:
-
-
-columns_to_drop = ['id', 'weight_in_g']
-data = data.drop(columns = columns_to_drop, axis = 1)
-
-
-# In[257]:
-
-
-# Visualise data with histogram
-data.hist(alpha=0.7, bins=50, figsize=(14, 10))
-plt.subplots_adjust(hspace=0.6)
+# Visualise distributions 
+data.hist(alpha = 0.7, bins = 50, figsize = (14, 10))
+plt.subplots_adjust(hspace = 0.6)
+plt.suptitle("Feature Distributions", fontsize = 14)
 plt.show()
 
+# Remove outliers using Z-score (threshold = 3) 
+outlier_cols = ['width', 'weight_in_kg', 'nicesness']
+z_cols = [f"{col}_z" for col in outlier_cols]
+data[z_cols] = zscore(data[outlier_cols])
 
-# ## Information gained:
-# ### 1) Column **"ID**" could be dropped as it doesn't bring any information.
-# ### 2) Column **"weight_in_g"** could be dropped as it's a duplicate for "weight_in_kg" attribute.
-# ### 3) Values in the column **"error"** could be replaced from yes: 1, no: 0.
-# ### 4) Values in the columns **"ionizationclass"** and **"FluxCompensation"** could be labeled.
-# ### 5) Values in columns **"width", "weight_in_kg", "nicesness"** are unusual.
+outliers = (
+    (data['width_z'].abs() > 3) |
+    (data['weight_in_kg_z'].abs() > 3) |
+    (data['nicesness_z'].abs() > 3))
 
-# ## Removing outliers with Z-score
-
-# In[258]:
-
-
-# Calculate z-scores for relevant columns
-data[['width_z', 'weight_in_kg_z', 'nicesness_z']] = zscore(data[['width', 'weight_in_kg', 'nicesness']])
-
-# Identify rows with outliers
-outliers = ((data['width_z'] < -3) | (data['width_z'] > 3) |
-            (data['weight_in_kg_z'] < -3) | (data['weight_in_kg_z'] > 3) |
-            (data['nicesness_z'] < -3) | (data['nicesness_z'] > 3))
-
-# Drop rows with outliers
-data = data.drop(data[outliers].index)
-
-# Drop the "z_score" column
-data = data.drop(['width_z', 'weight_in_kg_z', 'nicesness_z'], axis=1)
+data = data[~outliers].drop(columns=z_cols)
 
 
-# In[259]:
+# Normalise numeric columns with MinMax scaling
+numeric_cols = data.select_dtypes(np.number).columns
+data[numeric_cols] = minmax_scale(data[numeric_cols])
+
+**Feature Engineering**
+
+# Encode boolean columns 
+for col in ['error', 'multideminsionality']:
+    data[col] = data[col].replace({'yes': 1, 'no': 0})
+
+# Label encode categorical columns 
+le_ionization = LabelEncoder()
+le_flux = LabelEncoder()
+data['ionizationclass'] = le_ionization.fit_transform(data['ionizationclass'])
+data['fluxcompensation'] = le_flux.fit_transform(data['fluxcompensation'])
 
 
-# MinMax normalise all numeric columns
-cols = data.select_dtypes(np.number).columns
-data[cols] = minmax_scale(data[cols])
+# FEATURE SPLIT: RAW MATERIAL vs OUTPUT
 
+input_data = data[['width', 'height', 'ionizationclass', 'fluxcompensation',
+                      'pressure', 'karma', 'modulation', 'weight_in_kg']]
 
-# In[260]:
+output_data = data[['error', 'error_type', 'quality', 'reflectionscore',
+                     'distortion', 'nicesness', 'multideminsionality']]
 
-
-# Replace boolean yes/no to 1/0 for "error" and "multideminsionality" columns
-data['error'].replace(['yes', 'no'], [1,0], inplace=True)
-data['multideminsionality'].replace(['yes', 'no'], [1,0], inplace=True)
-
-# Create LabelEncoder instances
-le_ionizationclass = LabelEncoder()
-le_FluxCompensation = LabelEncoder()
-
-# Fit and transform each column
-data['ionizationclass'] = le_ionizationclass.fit_transform(data['ionizationclass'])
-data['fluxcompensation'] = le_FluxCompensation.fit_transform(data['fluxcompensation'])
-
-
-# ## Check for obvious correlations with matrix to know if the properties can be predicted at the input to optimize the production
-
-# In[261]:
-
-
-raw_material = data[['width', 'height', 'ionizationclass', 'fluxcompensation', 'pressure', 'karma', 'modulation', 'weight_in_kg']]
-output_data = data[['error', 'error_type', 'quality', 'reflectionscore', 'distortion', 'nicesness', 'multideminsionality']]
-
-# Prepare mask
-matrix = raw_material.corr().round(2)
+# Correlation Matrix: Raw Material Features 
+matrix = input_data.corr().round(2)
 mask = np.triu(np.ones_like(matrix, dtype=bool))
+sns.heatmap(matrix, annot=True, vmax=1, vmin=-1, cmap='vlag', mask=mask)
+plt.title("Correlation Matrix - Input Data Features")
+plt.show()
+# Result: High correlations between weight_in_kg, width, and height
 
-# Build
-sns.heatmap(matrix, annot = True, vmax = 1, vmin = -1, cmap = 'vlag', mask = mask)
+# Prepare data 
+model_data = pd.concat([input_data, output_data], axis = 1)
+model_data = model_data.drop(columns = ['error', 'error_type', 'quality',
+                                       'reflectionscore', 'distortion',
+                                       'nicesness', 'multideminsionality'])
 
+# One-hot encode categorical columns
+ionization_dummies = pd.get_dummies(model_data['ionizationclass'])
+flux_dummies = pd.get_dummies(model_data['fluxcompensation'])
+model_data = model_data.drop(columns=['ionizationclass', 'fluxcompensation'])
+model_data = pd.concat([model_data, ionization_dummies, flux_dummies], axis=1)
 
-# ## Result: high correlations between weight in kg and width / height features
-
-# # Polynomial Model
-
-# In[262]:
-
-
-#Q1 Multiple Polinomial Model: What will be weight of potential product ?
-
-#concat raw_material and output
-data = pd.concat([raw_material, output_data], axis =1)
-
-#drop output data and id
-data = data.drop(['error', 'error_type', 'quality', 'reflectionscore', 'distortion', 'nicesness', 'multideminsionality'], axis =1)
-
-# Convert categorical data to numerical
-ionizationclass = pd.get_dummies(data['ionizationclass'])
-FluxCompensation = pd.get_dummies(data['fluxcompensation'])
-
-data.drop(['ionizationclass', 'fluxcompensation'], axis = 1, inplace = True)
-
-data = pd.concat([data, ionizationclass, FluxCompensation], axis =1)
-
-# Calculating correlation coefficients to select input variables
-correlation_matrix = data.corr()
-
-# Plotting the correlation matrix
+# Correlation matrix for model data
 plt.figure(figsize = (12, 8))
-sns.heatmap(correlation_matrix, annot = True, cmap = 'coolwarm')
-plt.title("Correlation Matrix for Manufacturing Data")
+sns.heatmap(model_data.corr(), annot=True, cmap='coolwarm')
+plt.title("Correlation Matrix - Manufacturing Data")
 plt.show()
 
-#Assign x and y
-x = data[['width']]
-y = data['weight_in_kg']
+**MODEL 1 — POLYNOMIAL REGRESSION (Predicting Weight)**
+# Train/Test Split
 
-# Splitting the data for 'width'
+x = model_data[['width']]
+y = model_data['weight_in_kg']
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 42)
 
-
-# Linear Regression Model
+# Linear Regression 
 linear_model = LinearRegression()
 linear_model.fit(x_train, y_train)
 y_pred_linear = linear_model.predict(x_test)
 
-
-# Polynomial Regression Model (Degree 3)
-polynomial_converter = PolynomialFeatures(degree = 3, include_bias = False)
-x_train_poly = polynomial_converter.fit_transform(x_train)
-x_test_poly = polynomial_converter.transform(x_test)
+# Polynomial Regression (Degree 3) 
+poly_converter = PolynomialFeatures(degree = 3, include_bias = False)
+x_train_poly = poly_converter.fit_transform(x_train)
+x_test_poly = poly_converter.transform(x_test)
 
 poly_model = LinearRegression()
 poly_model.fit(x_train_poly, y_train)
 y_pred_poly = poly_model.predict(x_test_poly)
 
+# Visualise: Actual vs Predicted 
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-# Visualizing the performance of Linear and Polynomial Models
-plt.figure(figsize = (14, 6))
-
-# Linear Model
-plt.subplot(1, 2, 1)
-plt.scatter(x_test['width'], y_test, color = 'blue', alpha = 0.5, label = 'Actual')
-plt.scatter(x_test['width'], y_pred_linear, color = 'red', alpha = 0.5, label = 'Predicted - Linear', edgecolors = 'black')
-plt.title('Linear Model: Actual vs Predicted')
-plt.xlabel('Width')
-plt.ylabel('Weight in kg')
-plt.legend()
-plt.gca().set_facecolor('lightgray')
-plt.grid(True)
-
-# Polynomial Model
-plt.subplot(1, 2, 2)
-plt.scatter(x_test['width'], y_test, color = 'blue', alpha = 0.5, label = 'Actual')
-plt.scatter(x_test['width'], y_pred_poly, color = 'yellow', alpha = 0.5, label = 'Predicted - Polynomial', edgecolors = 'black')
-plt.title('Polynomial Model: Actual vs Predicted')
-plt.xlabel('Width')
-plt.ylabel('Weight in kg')
-plt.legend()
-plt.gca().set_facecolor('lightgray')
-plt.grid(True)
+for ax, y_pred, color, label, title in zip(
+    axes,
+    [y_pred_linear, y_pred_poly],
+    ['red', 'yellow'],
+    ['Predicted - Linear', 'Predicted - Polynomial'],
+    ['Linear Model: Actual vs Predicted', 'Polynomial Model: Actual vs Predicted']
+):
+    ax.scatter(x_test['width'], y_test, color='blue', alpha=0.5, label='Actual')
+    ax.scatter(x_test['width'], y_pred, color=color, alpha=0.5,
+               label=label, edgecolors='black')
+    ax.set_title(title)
+    ax.set_xlabel('Width')
+    ax.set_ylabel('Weight in kg')
+    ax.legend()
+    ax.set_facecolor('lightgray')
+    ax.grid(True)
 
 plt.tight_layout()
 plt.show()
 
-
-# Residual Analysis
+# Residual Analysis 
 residuals_linear = y_test - y_pred_linear
 residuals_poly = y_test - y_pred_poly
 
-# Plotting residuals for both models
-plt.figure(figsize = (14, 6))
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-# Linear Model Residuals
-plt.subplot(1, 2, 1)
-plt.scatter(y_pred_linear, residuals_linear, color = 'blue', alpha = 0.5, edgecolors = 'black')
-plt.title('Residuals of Linear Model')
-plt.xlabel('Predicted Values')
-plt.ylabel('Residuals')
-plt.axhline(y = 0, color = 'red', linestyle = '--')
-plt.gca().set_facecolor('lightgray')
-plt.grid(True)
-plt.tight_layout()
+for ax, residuals, color, title in zip(
+    axes,
+    [residuals_linear, residuals_poly],
+    ['blue', 'green'],
+    ['Residuals - Linear Model', 'Residuals - Polynomial Model']
+):
+    ax.scatter(y_pred_linear if color == 'blue' else y_pred_poly,
+               residuals, color=color, alpha=0.5, edgecolors='black')
+    ax.axhline(y=0, color='red', linestyle='--')
+    ax.set_title(title)
+    ax.set_xlabel('Predicted Values')
+    ax.set_ylabel('Residuals')
+    ax.set_facecolor('lightgray')
+    ax.grid(True)
 
-# Polynomial Model Residuals
-plt.subplot(1, 2, 2)
-plt.scatter(y_pred_poly, residuals_poly, color = 'green', alpha = 0.5, edgecolors = 'black')
-plt.title('Residuals of Polynomial Model')
-plt.xlabel('Predicted Values')
-plt.ylabel('Residuals')
-plt.axhline(y = 0, color = 'red', linestyle = '--')
-plt.gca().set_facecolor('lightgray')
-plt.grid(True)
 plt.tight_layout()
 plt.show()
 
-#Error Check for Linear Model
-mse_linear = mean_squared_error(y_test, y_pred_linear)
-mae_linear = mean_absolute_error(y_test, y_pred_linear)
-r2_linear = r2_score(y_test, y_pred_linear)
+# Model Evaluation 
+for label, y_pred, mse in [
+    ("Linear Regression", y_pred_linear, mean_squared_error(y_test, y_pred_linear)),
+    ("Polynomial Regression", y_pred_poly, mean_squared_error(y_test, y_pred_poly))
+]:
+    mae = mean_absolute_error(y_test, y_pred)
+    r2  = r2_score(y_test, y_pred)
+    print(f"\n--- {label} ---")
+    print(f"MSE  : {mse:.4f}")
+    print(f"RMSE : {np.sqrt(mse):.4f}")
+    print(f"MAE  : {mae:.4f}")
+    print(f"R²   : {r2:.5f}")
 
-# Print ERRORs
-print("MSE - Mean Squared Error of Linear Regression: " + str(round(mse_linear, 4)))
-print("RMSE - Root Mean Square Error of Linear Regression: " + str(round(np.sqrt(mse_linear), 4)))
-print("MAE - Mean Absolute Error of Linear Regression: " + str(round(mae_linear, 4)))
-print("R Square of Linear Regression: " + str(round(r2_linear, 5)))
-print('------------------------------------------------------------------------------')
+# Polynomial equation
+c3, c2, c1 = poly_model.coef_
+intercept = poly_model.intercept_
+print(f"\nPolynomial Function: y = {round(c3,4)}x³ + {round(c2,4)}x² + {round(c1,4)}x + {round(intercept,4)}")
 
-#Error Check for Polynomial Model
-mse_poly = mean_squared_error(y_test, y_pred_poly)
-mae_poly = mean_absolute_error(y_test, y_pred_poly)
-r2_poly = r2_score(y_test, y_pred_poly)
+**MODEL 2 — XGBOOST CLASSIFIER (Predicting Error)**
+# Prepare Data 
+clf_data = pd.concat([input_data, output_data], axis = 1)
+clf_data = clf_data.drop(columns = ['error_type', 'weight_in_kg', 'quality',
+                                   'reflectionscore', 'distortion',
+                                   'nicesness', 'multideminsionality'])
 
-print("MSE - Mean Squared Error of Polynomial: " + str(round(mse_poly, 4)))
-print("RMSE - Root Mean Square Error of Polynomial: " + str(round(np.sqrt(mse_poly), 4)))
-print("MAE - Mean Absolute Error of Polynomial: " + str(round(mae_poly, 4)))
-print("R Square of of Polynomial: " + str(round(r2_poly, 5)))
+x = clf_data.drop(columns = ['error'])
+y = LabelEncoder().fit_transform(clf_data['error'])
 
-# Coefficients
-x3_coefficients = round(poly_model.coef_[0], 4)
-x2_coefficients = round(poly_model.coef_[1], 4)
-x_coefficients = round(poly_model.coef_[2], 4)
-intercept = round(poly_model.intercept_, 4)
-
-print("Polinomial Function is " 'y = '+ str(x3_coefficients) + 'x^3 ' + '+ ' + str(x2_coefficients) + 'x^2 ' + str(x_coefficients) + 'x ' + '+ ' + str(intercept))
-
-
-# # XGBOOST_CLASSIFIER
-
-# In[263]:
-
-
-#Q2 XGBOOST_CLASSIFIER width, height, ionization class and etc... (Error)
-
-#concat raw_material and output
-data = pd.concat([raw_material, output_data], axis =1)
-
-#drop output values
-new_data = data.drop(['error_type' ,'weight_in_kg', 'quality', 'reflectionscore', 'distortion', 'nicesness', 'multideminsionality'], axis = 1)
-
-#define x and y values
-x = new_data.drop(['error'], axis =1)
-y = new_data[['error']]
-
-le = LabelEncoder()
-y = le.fit_transform(y)
-
-#define train, test dataset, create model
+# Train/Test Split 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.3, random_state = 42)
 
-model = XGBClassifier(max_depth = 4)
+# Train XGBoost Classifier 
+model = XGBClassifier(max_depth = 4, random_state = 42)
 model.fit(x_train, y_train)
-
 y_pred = model.predict(x_test)
+y_pred_proba = model.predict_proba(x_test)[:, 1]
 
-#Measure Accuracy
-balanced_accuracy = balanced_accuracy_score(y_test, y_pred)
-accuracy = accuracy_score(y_test, y_pred)
-print('Accuracy:', round(accuracy, 3))
-print('Balanced Accuracy:', round(balanced_accuracy, 3))
+# Model Evaluation 
+print("\n--- XGBoost Classifier ---")
+print(f"Accuracy          : {accuracy_score(y_test, y_pred):.3f}")
+print(f"Balanced Accuracy : {balanced_accuracy_score(y_test, y_pred):.3f}")
+print(f"F1 Score          : {f1_score(y_test, y_pred):.2f}")
 
-# Calculating the F1 Score
-f1 = round(f1_score(y_test, y_pred),2)
-print("F1 Score is " + str(f1))
-
-#Visualise Tree
-fig, ax = plt.subplots(figsize=(30, 30))
-xgb.plot_tree(model, num_trees = 0, ax = ax, class_names = data['error'].unique())
+# Feature Importance Plot (replaces Decision Tree visual) 
+fig, ax = plt.subplots(figsize = (10, 6))
+plot_importance(model, ax = ax, importance_type = 'weight')
+plt.title("XGBoost Feature Importance")
+plt.tight_layout()
 plt.show()
 
-# Calculation of Confusion Matrix
+# Confusion Matrix 
 conf_matrix = confusion_matrix(y_test, y_pred)
 
-# Visualise Confusion Matrix
-plt.figure(figsize=(10, 8))
-ax = sns.heatmap(conf_matrix, annot = True, fmt = 'd', cmap = 'viridis', cbar = False, annot_kws = {"size": 16})
+plt.figure(figsize = (10, 8))
+ax = sns.heatmap(conf_matrix, annot = True, fmt = 'd', cmap = 'viridis',
+                 cbar = False, annot_kws = {"size": 16})
+ax.set_xticklabels(['Negative (0)', 'Positive (1)'], fontsize = 14)
+ax.set_yticklabels(['Negative (0)', 'Positive (1)'], fontsize = 14, rotation = 0)
 plt.title('Confusion Matrix', fontsize = 20)
 plt.ylabel('True Label', fontsize = 16)
 plt.xlabel('Predicted Label', fontsize = 16)
-ax.set_xticklabels(['Negative (0)', 'Positive (1)'], fontsize=14)
-ax.set_yticklabels(['Negative (0)', 'Positive (1)'], fontsize=14, rotation=0)
+plt.tight_layout()
 plt.show()
 
-# Calculate the ROC curve and AUC
-fpr, tpr, thresholds = roc_curve(y_test, y_pred)
+# ROC Curve 
+fpr_vals, tpr_vals, _ = roc_curve(y_test, y_pred_proba)
+auc_score = roc_auc_score(y_test, y_pred_proba)
 
-# Calculate the Area Under Curve
-auc_score = roc_auc_score(y_test, y_pred)
-
-# Plotting the ROC curve
-plt.figure(figsize=(10, 8))
-plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (area = {auc_score:.2f})')
-plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+plt.figure(figsize = (10, 8))
+plt.plot(fpr_vals, tpr_vals, color = 'darkorange', lw = 2,
+         label = f'ROC Curve (AUC = {auc_score:.2f})')
+plt.plot([0, 1], [0, 1], color = 'navy', lw = 2, linestyle = '--')
 plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate', fontsize=16)
-plt.ylabel('True Positive Rate', fontsize=16)
-plt.title('Receiver Operating Characteristic (ROC)', fontsize=20)
-plt.legend(loc="lower right", fontsize=16)
+plt.xlabel('False Positive Rate', fontsize = 16)
+plt.ylabel('True Positive Rate', fontsize = 16)
+plt.title('Receiver Operating Characteristic (ROC)', fontsize = 20)
+plt.legend(loc = 'lower right', fontsize = 16)
 plt.gca().set_facecolor('lightgray')
 plt.grid(True)
+plt.tight_layout()
 plt.show()
 
-# TPR FPR
-true_negative, false_positive, false_negative, true_positive = confusion_matrix(y_test, y_pred).ravel()
+# TPR & FPR Table 
+tn, fp, fn, tp = conf_matrix.ravel()
+tpr_val = round(tp / (tp + fn), 2)
+fpr_val = round(fp / (fp + tn), 2)
 
-# Calculating True Positive Rate (TPR) and False Positive Rate (FPR)
-tpr = round(true_positive / (true_positive + false_negative),2)  # TPR = TP / (TP + FN)
-fpr = round(false_positive / (false_positive + true_negative),2) # FPR = FP / (FP + TN)
+results_df = pd.DataFrame({
+    "Metric": ["True Positive Rate (TPR)", "False Positive Rate (FPR)"],
+    "Value":  [tpr_val, fpr_val]})
 
-# Creating a table for display
-results = {
-    "Metrics": ["True Positive Rate (TPR)", "False Positive Rate (FPR)"],
-    "Values": [tpr, fpr]
-}
-
-results_df = pd.DataFrame(results)
-
-# Plotting the table
-fig, ax = plt.subplots(figsize=(5, 2))  # set size frame
+fig, ax = plt.subplots(figsize = (5, 2))
 ax.axis('tight')
 ax.axis('off')
-ax.table(cellText=results_df.values, colLabels=results_df.columns, cellLoc = 'center', loc='center',
-         colColours=["palegreen", "paleturquoise"])
-
-plt.title("Calculated TPR and FPR", fontsize=16, color="darkblue")
-plt.gca().set_facecolor('lightgray')
+ax.table(cellText = results_df.values, colLabels = results_df.columns,
+         cellLoc = 'center', loc = 'center',
+         colColours = ["palegreen", "paleturquoise"])
+plt.title("TPR and FPR", fontsize = 16, color = "darkblue")
+plt.tight_layout()
 plt.show()
 
 
-# In[ ]:
 
 
-
-
-
-# In[ ]:
 
 
 
