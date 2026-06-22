@@ -74,19 +74,19 @@ The model is predicting Error in future products by using main factors as input.
 
 ![image](https://github.com/user-attachments/assets/225b3648-66fa-432d-8d97-926eb5a0b7d5)
 
-**Figure_4.** "Decision Tree"
+**Figure_5.** "Decision Tree"
 
 The Confusion Matrix below shows slightly lower performance than Confusion Matrix of 1st model with the following values: True Negatives (TN): 1783, False Positives (FP): 186, False Negatives (FN): 48, and True Positives (TP): 951.
 
 ![image](https://github.com/user-attachments/assets/a889ace5-0817-4213-8563-07fb94d4e14c)
 
-**Figure_5.** "Confusion Matrix"
+**Figure_6.** "Confusion Matrix"
 
 The ROC (Receiver Operating Characteristic) graph below illustrates the relationship between the True Positive Rate (TPR) and the False Positive Rate (FPR).
 
 ![image](https://github.com/user-attachments/assets/a588b78d-abbe-4bc0-839c-98fa8472b38a)
 
-**Figure_6.** "ROC (Receiver Operating Characteristic)"
+**Figure_7.** "ROC (Receiver Operating Characteristic)"
 
 The following performance results were achieved using the XGBoost Classifier model, demonstrating the model's high reliability and effectiveness.
 Accuracy: 0.921
