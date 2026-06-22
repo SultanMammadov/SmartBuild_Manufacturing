@@ -114,21 +114,15 @@ With Python-based integration, the model can also be deployed for real-time erro
 
 
 **What could be improved ?**
-Feature Engineering:
-Investigate additional provided features that could improve model performance.
+- Feature Engineering: Investigate additional provided features that could improve model performance.
 
-Model Tuning:
-Fine-tuning hyperparameters of the XGBClassifier could further optimize performance.
+- Model Tuning: Fine-tuning hyperparameters of the XGBClassifier could further optimize performance.
 
-Advanced Validation Techniques:
-Implementing k-fold cross-validation for a more robust evaluation.
-Using stratified sampling to ensure balanced representation of classes.
+- Advanced Validation Techniques: Implementing k-fold cross-validation for a more robust evaluation.
 
-Addressing Class Imbalance:
-Techniques like SMOTE or adjusting class weights in the XGBClassifier to deal with imbalanced datasets.
+- Addressing Class Imbalance: Techniques like SMOTE or adjusting class weights in the XGBClassifier to deal with imbalanced datasets.
 
-Alternative Models:
-Comparing results with other algorithms like Random Forest, SVM, or neural networks to find the best-performing model.
+- Alternative Models: Comparing results with other algorithms like Random Forest, SVM, or neural networks to find the best-performing model.
 
 
 
