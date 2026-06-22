@@ -27,15 +27,16 @@ Most features look reasonably well-distributed, with karma, reflectionscore, and
 
 Feature engineering began by converting boolean columns — error and multideminsionality — from yes/no text values to binary 1/0 format, making them numerically interpretable. Label Encoding was then applied to the categorical columns ionizationclass and fluxcompensation, replacing text categories with corresponding numerical values. The dataset was subsequently split into input and output features, separating raw material properties from production outcomes to provide a clearer structure for modelling. Finally, a correlation matrix was computed on the input features, revealing strong relationships between weight_in_kg, width, and height, which informed feature selection for the models ahead.
 
-
-**1st Model:** Polynomial Model:
-
-The dataset was split into 80% for training and 20% for testing.
 The below correlation matrix displays the relationships between various variables in a dataset. It shows correlation coefficients that measure the strength and direction of these relationships. There is a very high relationship between width and weight_in_kg (0.97), indicating that weight_in_kg increase as the width increase. The relationships between other variables are very weak.
 
 <img width="645" height="543" alt="download" src="https://github.com/user-attachments/assets/bebc564e-117d-4a9f-a5b1-3dedb01f2eaf" />
 
 **Figure_2.** "Correlation Matrix of all variables"
+
+
+**1st Model:** Polynomial Model:
+
+The dataset was split into 80% for training and 20% for testing.
 
 ![image](https://github.com/user-attachments/assets/9ef67098-99e4-48aa-ade7-3d2600e25c07)
 
@@ -61,6 +62,10 @@ RMSE - Root Mean Square Error of Polynomial: 0.0334
 MAE - Mean Absolute Error of Polynomial: 0.0241
 R Square of of Polynomial: 0.97365
 **Polinomial Function** is y = 0.353x^3 + 0.9171x^2 -0.2201x + 0.0213
+
+
+Both models do a strong job of predicting weight from width, but the Polynomial model clearly has the edge. The Linear model follows the data well with an R² of 0.95, though its residual plot reveals a distinct curved pattern, which is a tell-tale sign that a straight line is not fully capturing the relationship between width and weight. The Polynomial model addresses this nicely, fitting a smooth curve through the data and achieving an R² of 0.97, with noticeably lower error across all metrics — MSE dropping from 0.0021 to 0.0011 and MAE from 0.0352 to 0.0241. Its residuals are much more evenly scattered around zero, suggesting the model is capturing the underlying relationship more accurately. Overall, the Polynomial model of degree 3 — expressed as y = 0.353x³ + 0.917x² − 0.220x + 0.021 — is the stronger choice and is well-suited for predicting product weight based on width in a manufacturing setting.
+
 
 **2nd Model:** XGBoost Classifier:
 
@@ -90,20 +95,26 @@ F1 Score is 0.94
 
 
 **Why the Analysis Was Done This Way ?**
-The XGBClassifier predicted Errors much more accurately than Decision Tree.
-Relationship is complex and non-linear between features which XGBoost can capture better.  
-Comprehensive Evaluation: Using metrics like F1, TPR, FPR, Accuracy, and AUC prove the model's performance and the way of analysis.
-Balancing Sensitivity and Specificity: TPR and FPR are crucial for evaluating the trade-offs between correctly identifying positive cases and avoiding false positives.
+The XGBoost Classifier delivers strong results with an accuracy of 92.1%, a balanced accuracy of 90.5%, and an F1 score of 0.94, confirming it handles both error and non-error cases reliably — and notably outperforming a standard Decision Tree, thanks to XGBoost's ability to capture complex, non-linear relationships between features. Feature importance reveals that karma, width, and height are the primary drivers of error prediction, while fluxcompensation and ionizationclass contribute the least. The confusion matrix shows 1,783 true positives and 951 true negatives, with only 48 false negatives and 186 false positives — a solid outcome in a manufacturing setting where early error detection is critical. The ROC curve (AUC = 0.90) and a TPR of 0.97 further confirm the model's effectiveness, and using a comprehensive set of metrics — F1, TPR, FPR, Accuracy, and AUC — ensures a well-rounded and transparent evaluation of performance.
+From a business perspective, the value this model delivers is significant. With 92% prediction accuracy, only 8% of defective products go undetected, which translates to a saving of approximately 12,000 EUR per 1,000 products — enough to purchase around 1,200 kg of raw materials. The solution can also be quickly integrated into existing IT systems using Python, with the potential to support real-time analysis through data streams. Ultimately, this level of accuracy creates tangible value across cost reduction, customer satisfaction, and legal compliance and safety standards.
 
-**What value can we derive from the insights?**
-92% correct prediction in defective products, just 8% can’t be detected.
-Model can help to save 12k eur (1000*0.08*150) per 1k products by predicting defective products in advance. 
-1200kg (12000 eur/ 10) raw materials could be bought with the saving.
-Fast integration: Our reports including visualizations can be quickly integrated into existing IT systems using the Python programming, as well as streams for real-time analysis
-Prediction of errors with this level of accuracy can be valuable in manufacturing to solve problems in the below areas: 
-Cost Reduction
-Customer Satisfaction and Trust
-Legal Compliance and Safety Standards
+
+
+
+**Business problems:**  
+ 
+ - What will be weight of the future products ?
+
+The Polynomial Regression model (degree 3) demonstrated that product weight can be reliably predicted from width alone, achieving an R² of 0.97 and a low MAE of 0.024.
+This means the business can accurately estimate the weight of future products at the input stage, before production is complete, enabling better material planning, cost forecasting, and quality control.
+
+ - How can we predict errors in advance ?
+ 
+The XGBoost Classifier answers this question directly, achieving 92.1% accuracy in identifying defective products before they reach the end of the production line. 
+By analysing input features such as karma, width, and height, the model flags potential errors early, giving the business the opportunity to intervene before defects escalate. 
+This translates to an estimated saving of 12,000 EUR per 1,000 products, reduced material waste, and improved compliance with safety and quality standards. 
+With Python-based integration, the model can also be deployed for real-time error prediction within existing IT systems, making it a practical and scalable solution for the manufacturing floor.
+
 
 **What could be improved ?**
 Feature Engineering:
