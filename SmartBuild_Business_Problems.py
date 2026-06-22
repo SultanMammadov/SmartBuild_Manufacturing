@@ -1,6 +1,6 @@
 # SmartBuild Manufacturing - Data Analysis Pipeline
 
-# IMPORT Libraries, Packages
+**IMPORT Libraries, Packages**
 
 # Data Manipulation
 import pandas as pd
@@ -32,8 +32,8 @@ from sklearn.feature_selection import mutual_info_classif, mutual_info_regressio
 
 import os
 
-# DATA IMPORT
-
+**DATA IMPORT**
+  
 path = input("Enter input file path:")
 file = "SmartBuild_Manufacturing.csv"
 path_file = os.path.join(path, file)
@@ -46,7 +46,6 @@ print(data.dtypes)
 **DATA CLEANING**
 
 # Check for missing values 
-
 print(data.isnull().sum())
 
 # Drop duplicate and uninformative columns 
@@ -72,7 +71,6 @@ outliers = (
     (data['nicesness_z'].abs() > 3))
 
 data = data[~outliers].drop(columns=z_cols)
-
 
 # Normalise numeric columns with MinMax scaling
 numeric_cols = data.select_dtypes(np.number).columns
@@ -154,8 +152,7 @@ for ax, y_pred, color, label, title in zip(
     [y_pred_linear, y_pred_poly],
     ['red', 'yellow'],
     ['Predicted - Linear', 'Predicted - Polynomial'],
-    ['Linear Model: Actual vs Predicted', 'Polynomial Model: Actual vs Predicted']
-):
+    ['Linear Model: Actual vs Predicted', 'Polynomial Model: Actual vs Predicted']):
     ax.scatter(x_test['width'], y_test, color='blue', alpha=0.5, label='Actual')
     ax.scatter(x_test['width'], y_pred, color=color, alpha=0.5,
                label=label, edgecolors='black')
@@ -179,8 +176,7 @@ for ax, residuals, color, title in zip(
     axes,
     [residuals_linear, residuals_poly],
     ['blue', 'green'],
-    ['Residuals - Linear Model', 'Residuals - Polynomial Model']
-):
+    ['Residuals - Linear Model', 'Residuals - Polynomial Model']):
     ax.scatter(y_pred_linear if color == 'blue' else y_pred_poly,
                residuals, color=color, alpha=0.5, edgecolors='black')
     ax.axhline(y=0, color='red', linestyle='--')
@@ -196,8 +192,7 @@ plt.show()
 # Model Evaluation 
 for label, y_pred, mse in [
     ("Linear Regression", y_pred_linear, mean_squared_error(y_test, y_pred_linear)),
-    ("Polynomial Regression", y_pred_poly, mean_squared_error(y_test, y_pred_poly))
-]:
+    ("Polynomial Regression", y_pred_poly, mean_squared_error(y_test, y_pred_poly))]:
     mae = mean_absolute_error(y_test, y_pred)
     r2  = r2_score(y_test, y_pred)
     print(f"\n--- {label} ---")
