@@ -98,7 +98,7 @@ The XGBoost Classifier delivers strong results with an accuracy of 92.1%, a bala
 From a business perspective, the value this model delivers is significant. With 92% prediction accuracy, only 8% of defective products go undetected, which translates to a saving of approximately 12,000 EUR per 1,000 products — enough to purchase around 1,200 kg of raw materials. The solution can also be quickly integrated into existing IT systems using Python, with the potential to support real-time analysis through data streams. Ultimately, this level of accuracy creates tangible value across cost reduction, customer satisfaction and legal compliance and safety standards.
 
 
-**Business problems:**  
+**Business Problem Solutions:**  
  
  - What will be weight of the future products ?
 
